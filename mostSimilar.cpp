@@ -54,6 +54,28 @@ float cos(vector<int> vec1, vector<int> vec2){
       return dot_product/(sqrt(normA*normB));
 }
 
+//调整余弦相似度算法 adjusted cosine similarity
+float cos_v2(vector<int> vec1, vector<int> vec2){
+  float dot_product = 0.0;
+  float normA = 0.0;
+  float normB = 0.0;
+  float avg = 0.0;
+  for(int i=0; i<vec1.size(); i++){
+    avg = (vec1[i] + vec2[i])/2;
+    vec1[i] = vec1[i] - avg;
+    vec2[i] = vec2[i] - avg;
+  }
+
+  for(int i=0; i<vec1.size(); i++){
+    dot_product += vec1[i] * vec2[i];
+    normA += vec1[i] * vec1[i];
+    normB += vec2[i] * vec2[i];
+  }
+  if(normA == 0.0 or normB == 0.0)
+      return 0;
+  else
+      return dot_product/(sqrt(normA*normB));
+}
 
 
 void getNearstDistDistribution(){
@@ -83,6 +105,30 @@ void getNearstDistDistribution(){
     }
 }
 
+vector<int> getNearstDistDistribution_v2(string mac){
+
+    vector<PAIR > cPair(macLonlat.begin(),macLonlat.end());
+    string mac1, mac2;
+    float dist = 0, lon=0,lat=0, lon2=2, lat2=0;
+    int ctgy = 0;
+    vector<int> ivector(12,0);
+
+    mac1 = mac;
+    lon = macLonlat[mac1].first;
+    lat = macLonlat[mac1].second;
+    for(int j = 0; j<cPair.size(); ++j){
+        mac2 = cPair[j].first;
+        //dist = euclideanDistance(cPair[i].second, cPair[j].second);
+        lon2 = cPair[j].second.first;
+        lat2 = cPair[j].second.second;
+        if(abs(lon-lon2)<=minDistance && abs(lat-lat2)<=minDistance){
+          ctgy = macCtgy[mac2];
+        //  macCtgyDistribution[mac1][ctgy-1] += 1;
+          ivector[ctgy-1] += 1;
+        }
+    }
+    return ivector;
+}
 
 void getMostSimilar_v2(distri macCtgyDistribution_func, string s){
     vector< pair<string, float> > macCosine;
@@ -93,7 +139,7 @@ void getMostSimilar_v2(distri macCtgyDistribution_func, string s){
 
     //map<string, pair<string, float> > similarity;
 
-    string s4 = s+"_similar";
+    string s4 = s+"_similar2";
     ofstream ofs(s4.c_str());
 
     distri::iterator iter1, iter2;
@@ -102,7 +148,7 @@ void getMostSimilar_v2(distri macCtgyDistribution_func, string s){
       macCosine.clear();
       for(iter2=macCtgyDistribution_func.begin(); iter2!=macCtgyDistribution_func.end(); ++iter2){
           mac2 = iter2->first;
-          macCosine.push_back(make_pair(mac2, cos(iter1->second, iter2->second)));
+          macCosine.push_back(make_pair(mac2, cos_v2(iter1->second, iter2->second)));
       }
       sort(macCosine.begin(), macCosine.end(), cmp_by_value);
       if(macCosine[0].first == mac1){
@@ -118,7 +164,8 @@ void getMostSimilar_v2(distri macCtgyDistribution_func, string s){
         //cout<< macCosine[0].first<<','<<macCosine[0].second<<endl;
       }
 
-      similr2 = cos(macCtgyDistribution[mac1], macCtgyDistribution[mac2]);
+      similr2 = cos_v2(macCtgyDistribution[mac1], macCtgyDistribution[mac2]);
+    //  similr2 = cos_v2(getNearstDistDistribution_v2(mac1), getNearstDistDistribution_v2(mac2));
 
       //cout<<macCtgy[mac1]<<','<<macCtgy[mac2]<<','<<similr<<','<<similr2<<endl;
 
@@ -231,7 +278,25 @@ int main(int argc, char* argv[]){
 
    getNearstDistDistribution();
    //map<string, pair<string, float> > similarity1 = getMostSimilar(macUtilization);
-   getMostSimilar_v2(macUtilization, s);
+
+//   getMostSimilar_v2(macUtilization, s);
+
+   string s5 = s+"_Neighbor";
+   ofstream ofs(s5.c_str());
+   distri::iterator iter;
+
+   int ctgy = 0;
+   for(iter=macCtgyDistribution.begin(); iter!=macCtgyDistribution.end(); ++iter){
+     mac = iter->first;
+     ctgy = macCtgy[mac];
+     ofs<<mac<<','<< ctgy;
+     for(int i=0; i<ctgyNum; i++){
+       ofs<<','<<macCtgyDistribution[mac][i];
+     }
+     ofs<<endl;
+   }
+   ofs.close();
+
 
 /*
    int ctgy1=0, ctgy2=0;
