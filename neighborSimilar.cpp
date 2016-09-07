@@ -142,7 +142,8 @@ void getMostSimilar1(distri macCtgyDistribution_func, string s){
 
 void getMostSimilar2(distri macCtgyDistribution_func, string s){
 
-    string s2 = s+"_avgNeighbor";
+    //string s2 = s+"_avgNeighbor";
+    string s2 = "../category12/sampling_wifi_poi_sampingv2_0316_avgNeighbor";//sampling_wifi_poi_sampingv2_0316_avgNeighbor
     ifstream ifs2(s2.c_str());
     vector<float> ivector(12,0);
     map<int, vector<float> > avgNeighbor;

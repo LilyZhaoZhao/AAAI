@@ -99,7 +99,9 @@ void getNearstDistDistribution(){
             //if(dist < minDistance){
             if(abs(lon-lon2)<=minDistance && abs(lat-lat2)<=minDistance){
               ctgy = macCtgy[mac2];
-              macCtgyDistribution[mac1][ctgy-1] += 1;
+              if(ctgy != 0){
+                macCtgyDistribution[mac1][ctgy-1] += 1;
+              }
             }
         }
     }
@@ -210,7 +212,59 @@ map<string, pair<string, float> > getMostSimilar(distri macCtgyDistribution_func
 }
 
 
+void validation(string s){
+    string s1 = s+"_intCatagory_";
+    string s2, istr;
+    string mac, token, line;
+    int catagory = 0;
+    int count = 0;
+    float lon=0, lat=0;
 
+
+    for(int i=1;i<=10;i++){
+      std::stringstream ss;
+      ss << i;
+      ss >> istr;
+      s2 = s1+istr;
+      //cout<<s2<<endl;
+      catagory = 0;
+      count = 0;
+      lon=0, lat=0;
+      ifstream ifs2(s2.c_str());
+      while(getline(ifs2, line)){
+         istringstream iss(line);
+         count=0;
+         while(getline(iss, token, '|')){
+             count ++;
+             switch(count){
+             case 2:
+                 mac = token;
+                 break;
+             case 3:
+                 lon = atof(token.c_str());
+                 break;
+             case 4:
+                 lat = atof(token.c_str());
+                 break;
+             case 8:
+                 catagory = atoi(token.c_str());
+                 //cout<< catagory<<endl;
+                 break;
+             }
+         }
+
+         if(i!=10){
+           macCtgy[mac] = catagory;
+           //cout<< i<<endl;
+         }
+         else{
+           macCtgy[mac] = 0;
+         }
+         macLonlat[mac] = make_pair(lon,lat);
+     }
+     ifs2.close();
+    }
+}
 
 
 int main(int argc, char* argv[]){
@@ -218,7 +272,7 @@ int main(int argc, char* argv[]){
    string s = argv[1];
    string s1 = s+"_Utilization";//safe_wifi_poi_catg12v2_0316_Utilization
    string s2 = s+"_intCatagory";//safe_wifi_poi_catg12v2_0316_intCatagory
-
+/*
    std::stringstream os;
 
    string mac, token, line;
@@ -275,16 +329,19 @@ int main(int argc, char* argv[]){
        macLonlat[mac] = make_pair(lon,lat);
    }
    ifs2.close();
+*/
 
+   validation(s);
    getNearstDistDistribution();
    //map<string, pair<string, float> > similarity1 = getMostSimilar(macUtilization);
 
 //   getMostSimilar_v2(macUtilization, s);
 
-   string s5 = s+"_Neighbor";
+   string s5 = s+"_Neighbor1";
    ofstream ofs(s5.c_str());
    distri::iterator iter;
 
+   string mac;
    int ctgy = 0;
    for(iter=macCtgyDistribution.begin(); iter!=macCtgyDistribution.end(); ++iter){
      mac = iter->first;
