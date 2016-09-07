@@ -113,6 +113,7 @@ void getMostSimilar1(distri macCtgyDistribution_func, string s){
     distri::iterator iter1, iter2;
     for(iter1=macCtgyDistribution_func.begin(); iter1!=macCtgyDistribution_func.end(); ++iter1){
       mac1 = iter1->first;
+      if(macCtgy[mac1] == 0){
       macCosine.clear();
       for(iter2=macCtgyDistribution_func.begin(); iter2!=macCtgyDistribution_func.end(); ++iter2){
           mac2 = iter2->first;
@@ -133,7 +134,7 @@ void getMostSimilar1(distri macCtgyDistribution_func, string s){
       }
 
       ofs<<mac1<<','<<macCtgy[mac1]<<','<<macCtgy[mac2]<<','<<similr<<endl;
-
+      }
     }
     ofs.close();
     //return similarity;

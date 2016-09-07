@@ -16,6 +16,7 @@ using namespace std;
 //map<string, string> filter;
 map<string, pair<float, float> > macLonlat;
 map<string, int> macCtgy;
+map<string, int> macCtgyReal;//全部的mac真实类别
 map<string, vector<int> > macCtgyDistribution;
 typedef map<string, vector<int> > distri;
 //distri macCtgyDistribution;
@@ -253,13 +254,14 @@ void validation(string s){
              }
          }
 
-         if(i!=10){
+         if(i!=10){ //第10个split作为测试集
            macCtgy[mac] = catagory;
            //cout<< i<<endl;
          }
          else{
            macCtgy[mac] = 0;
          }
+         macCtgyReal[mac] = catagory;//所有mac的真实类别，用于比较结果。
          macLonlat[mac] = make_pair(lon,lat);
      }
      ifs2.close();
@@ -270,8 +272,8 @@ void validation(string s){
 int main(int argc, char* argv[]){
 
    string s = argv[1];
-   string s1 = s+"_Utilization";//safe_wifi_poi_catg12v2_0316_Utilization
-   string s2 = s+"_intCatagory";//safe_wifi_poi_catg12v2_0316_intCatagory
+//   string s1 = s+"_Utilization";//safe_wifi_poi_catg12v2_0316_Utilization
+//   string s2 = s+"_intCatagory";//safe_wifi_poi_catg12v2_0316_intCatagory
 /*
    std::stringstream os;
 
@@ -337,7 +339,7 @@ int main(int argc, char* argv[]){
 
 //   getMostSimilar_v2(macUtilization, s);
 
-   string s5 = s+"_Neighbor1";
+   string s5 = s+"_Neighbor";
    ofstream ofs(s5.c_str());
    distri::iterator iter;
 
@@ -346,7 +348,7 @@ int main(int argc, char* argv[]){
    for(iter=macCtgyDistribution.begin(); iter!=macCtgyDistribution.end(); ++iter){
      mac = iter->first;
      ctgy = macCtgy[mac];
-     ofs<<mac<<','<< ctgy;
+     ofs<<mac<<','<< macCtgyReal[mac] <<','<< ctgy;//mac,真实类别，测试集类别
      for(int i=0; i<ctgyNum; i++){
        ofs<<','<<macCtgyDistribution[mac][i];
      }
