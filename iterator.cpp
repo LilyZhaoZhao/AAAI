@@ -1,3 +1,7 @@
+/*
+仅根据平均邻域分布来预测mac类别。
+*/
+
 #include <fstream>
 #include <string>
 #include <sstream>
@@ -23,6 +27,7 @@ distri macCtgyDistribution;
 
 double minDistance = 0.001; //0.003; ap间的距离在这个范围内(经纬度都相差0.001)时，列为邻居
 int ctgyNum = 12; //其中未知ap的类别为0
+int k = 3;
 
 typedef pair<string, pair<float, float> > PAIR;
 
@@ -91,6 +96,45 @@ void getMostSimilar1(){
 
 }
 
+
+//在getMostSimilar1的基础上更改，在得到macCosine后，进行top k选择，选取最多的类别为预测类别。
+void getMostSimilar1_v2(){
+
+    vector< pair<string, float> > macCosine;
+
+    string mac1, mac2;
+    int ctgy = 0;
+    float similr=0;
+
+    map<string, int>::iterator iter1;
+    distri::iterator iter2;
+    vector<int>::iterator biggest;
+
+    for(iter1=macCtgyTest.begin(); iter1!=macCtgyTest.end(); ++iter1){
+      mac1 = iter1->first;
+      if(macCtgy[mac1] == 0){
+      macCosine.clear();
+      for(iter2=macCtgyDistribution.begin(); iter2!=macCtgyDistribution.end(); ++iter2){
+          mac2 = iter2->first;
+          macCosine.push_back(make_pair(mac2, cos(macCtgyDistribution[mac1], iter2->second)));
+      }
+      sort(macCosine.begin(), macCosine.end(), cmp_by_value);
+
+      vector<int> ctgyVec(12,0); //每一轮都重新定义
+      for(int i=0; i<k; i++){
+          mac2 = macCosine[i].first;
+          ctgy = macCtgy[mac2];
+          if(ctgy!=0)
+            ctgyVec[ctgy-1]++;
+      }
+
+      biggest = max_element(std::begin(ctgyVec), std::end(ctgyVec));
+      macCtgy[mac1] = distance(std::begin(ctgyVec), biggest) + 1; //更新macCtgy
+      //ofs<<mac1<<','<<macCtgy[mac1]<<','<<macCtgy[mac2]<<','<<similr<<endl;
+      }
+    }
+
+}
 
 
 void getNearstDistDistribution(){
@@ -197,6 +241,8 @@ int main(int argc, char* argv[]){
       getNearstDistDistribution();
       //然后，比较位置类别中，最相似的类型。并更新macCtgy。
       getMostSimilar1();
+      //getMostSimilar1_v2();
+
       //判断终止条件
       flag = 0;
       for(iter=macCtgyTest.begin(); iter!=macCtgyTest.end(); ++iter){
@@ -212,7 +258,8 @@ int main(int argc, char* argv[]){
    }
 
 
-   string s4 = s+"_neighborSimilar1";
+   string s4 = s+"_neighborSimilar1_10"; //使用getMostSimilar1
+   //string s4 = s+"_neighborSimilar1_v2_10"; //使用getMostSimilar1_v2
    ofstream ofs(s4.c_str());
 
    int ctgy = 0;

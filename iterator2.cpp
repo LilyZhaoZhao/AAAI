@@ -1,5 +1,5 @@
 /*
-仅根据平均邻域分布来预测mac类别。
+  有邻居的ap就根据平均邻域分布来预测mac类别，没有的邻居的ap根据utilization来预测。
 */
 
 #include <fstream>
@@ -21,17 +21,25 @@ map<string, int> macCtgy;//迭代更新，最终包含了预测类别
 map<string, int> macCtgyReal;//全部的mac真实类别
 map<string, int> macCtgyTest;//所有未知类型的mac
 map<int, vector<float> > avgNeighbor;//每一类的平均邻域分布
+map<int, vector<float> > avgUtilization;//每一类的平均邻域分布
+
 typedef map<string, vector<int> > distri;
 distri macCtgyDistribution;
+distri macUtilization;
 
 int flag = 1; //终止判断条件：当值为1时，说明还存在未知类别；值为0时，则不存在未知类别，可以终止。
 
 double minDistance = 0.001; //0.003; ap间的距离在这个范围内(经纬度都相差0.001)时，列为邻居
 int ctgyNum = 12; //其中未知ap的类别为0
+int k=3;
 
 typedef pair<string, pair<float, float> > PAIR;
 
 bool cmp_by_value(const pair<int, float> & m1, const pair<int, float> & m2) {
+        return m1.second > m2.second;
+}
+
+bool cmp_by_value2(const pair<string, float> & m1, const pair<string, float> & m2) {
         return m1.second > m2.second;
 }
 
@@ -57,6 +65,90 @@ float cos(vector<int> vec1, vector<float> vec2){
 }
 
 
+float cos2(vector<int> vec1, vector<int> vec2){
+  float dot_product = 0.0;
+  float normA = 0.0;
+  float normB = 0.0;
+  for(int i=0; i<vec1.size(); i++){
+    dot_product += vec1[i] * vec2[i];
+    normA += vec1[i] * vec1[i];
+    normB += vec2[i] * vec2[i];
+  }
+  if(normA == 0.0 or normB == 0.0)
+      return 0;
+  else
+      return dot_product/(sqrt(normA*normB));
+}
+
+//判断是否有邻居mac
+bool isNullNeighbor(string mac){
+    for(int i=0; i<ctgyNum; i++){
+      if(macCtgyDistribution[mac][i] > 0){
+        return false;
+      }
+    }
+    return true;//没有邻居
+}
+
+
+void getUtilizaion(){
+
+  string s1 = "../category12/sampling_wifi_poi_sampingv2_0316_Utilization";
+  ifstream ifs1(s1.c_str());
+
+  string mac, token, line;
+  int catagory = 0;
+  int count = 0;
+  vector<int> ivector(24,0);
+
+  while(getline(ifs1, line)){
+      istringstream iss(line);
+      count=0;
+      while(getline(iss, token, ',')){
+          count ++;
+          if(count == 1){
+            mac = token;
+          }
+          else{
+            ivector[count-2] = atoi(token.c_str()); //string to int
+          }
+      }
+      macUtilization[mac] = ivector;
+   }
+   ifs1.close();
+
+}
+
+
+void getAvgUtilization(){
+
+  //string s1 = "../category12/safe_wifi_poi_catg12v2_0316_avgUtilization";
+  string s1 = "../category12/sampling_wifi_poi_sampingv2_0316_avgUtilization";
+  ifstream ifs1(s1.c_str());
+
+  vector<float> ivector(24,0);
+
+  int ctgy,count;
+  string token, line;
+  while(getline(ifs1, line)){
+      istringstream iss(line);
+      count=0;
+      while(getline(iss, token, ',')){
+          count ++;
+          if(count == 1){
+            ctgy = atoi(token.c_str());
+          }
+          else{
+            ivector[count-2] = atof(token.c_str()); //string to float
+          }
+      }
+      avgUtilization[ctgy] = ivector;
+   }
+   ifs1.close();
+
+}
+
+
 
 void getMostSimilar2(){
 
@@ -73,9 +165,17 @@ void getMostSimilar2(){
     for(iter1=macCtgyTest.begin(); iter1!=macCtgyTest.end(); ++iter1){
       mac1 = iter1->first;
       macCosine.clear();
-      for(iter2=avgNeighbor.begin(); iter2!=avgNeighbor.end(); ++iter2){
-          ctgy2 = iter2->first;
-          macCosine.push_back(make_pair(ctgy2, cos(macCtgyDistribution[mac1], iter2->second)));
+      if(isNullNeighbor(mac1)){ //如果没有邻居，就按照utilization
+        for(iter2=avgUtilization.begin(); iter2!=avgUtilization.end(); ++iter2){
+            ctgy2 = iter2->first;
+            macCosine.push_back(make_pair(ctgy2, cos(macUtilization[mac1], iter2->second)));
+        }
+      }
+      else{
+        for(iter2=avgNeighbor.begin(); iter2!=avgNeighbor.end(); ++iter2){
+            ctgy2 = iter2->first;
+            macCosine.push_back(make_pair(ctgy2, cos(macCtgyDistribution[mac1], iter2->second)));
+        }
       }
       sort(macCosine.begin(), macCosine.end(), cmp_by_value);
 
@@ -86,10 +186,123 @@ void getMostSimilar2(){
         macCtgy[mac1] = ctgy2;
         flag = 1;
       }
-
 //      ofs<<mac1<<','<<macCtgy[mac1]<<','<<ctgy2<<','<<similr<<endl;
     }
 }
+
+
+//根据两两比较
+void getMostSimilar2_v2(){
+
+    vector< pair<string, float> > macCosine;
+
+    string mac1, mac2;
+    int ctgy2 = 0;
+    float similr=0;
+
+    map<string, int>::iterator iter1;
+    distri::iterator iter2;
+    vector<int>::iterator biggest;
+
+    flag = 0; //终止条件
+    for(iter1=macCtgyTest.begin(); iter1!=macCtgyTest.end(); ++iter1){
+      mac1 = iter1->first;
+      if(macCtgy[mac1] == 0){
+      macCosine.clear();
+      if(isNullNeighbor(mac1)){ //如果没有邻居，就按照utilization
+        for(iter2=macUtilization.begin(); iter2!=macUtilization.end(); ++iter2){
+            mac2 = iter2->first;
+            macCosine.push_back(make_pair(mac2, cos2(macUtilization[mac1], iter2->second)));
+        }
+      }
+      else{
+        for(iter2=macCtgyDistribution.begin(); iter2!=macCtgyDistribution.end(); ++iter2){
+            mac2 = iter2->first;
+            macCosine.push_back(make_pair(mac2, cos2(macCtgyDistribution[mac1], iter2->second)));
+        }
+      }
+      sort(macCosine.begin(), macCosine.end(), cmp_by_value2);
+
+      if(macCosine[0].first == mac1){
+        //similarity[mac1] = macCosine[1];
+        similr = macCosine[1].second;
+        mac2 = macCosine[1].first;
+        //cout<< macCosine[1].first<<','<<macCosine[1].second<<endl;
+      }
+      else{
+        //similarity[mac1] = macCosine[0];
+        similr = macCosine[0].second;
+        mac2 = macCosine[0].first;
+        //cout<< macCosine[0].first<<','<<macCosine[0].second<<endl;
+      }
+      ctgy2 = macCtgy[mac2];
+
+      if(ctgy2 != macCtgy[mac1]){ //更新
+        macCtgy[mac1] = ctgy2;
+        flag = 1;
+      }
+      }
+//      ofs<<mac1<<','<<macCtgy[mac1]<<','<<ctgy2<<','<<similr<<endl;
+    }
+}
+
+
+//根据两两比较，top k投票
+void getMostSimilar2_v3(){
+
+    vector< pair<string, float> > macCosine;
+
+    string mac1, mac2;
+    int ctgy2 = 0;
+    float similr=0;
+
+    map<string, int>::iterator iter1;
+    distri::iterator iter2;
+    vector<int>::iterator biggest;
+
+    flag = 0; //终止条件
+    for(iter1=macCtgyTest.begin(); iter1!=macCtgyTest.end(); ++iter1){
+      mac1 = iter1->first;
+      if(macCtgy[mac1] == 0){
+      macCosine.clear();
+      if(isNullNeighbor(mac1)){ //如果没有邻居，就按照utilization
+        for(iter2=macUtilization.begin(); iter2!=macUtilization.end(); ++iter2){
+            mac2 = iter2->first;
+            macCosine.push_back(make_pair(mac2, cos2(macUtilization[mac1], iter2->second)));
+        }
+      }
+      else{
+        for(iter2=macCtgyDistribution.begin(); iter2!=macCtgyDistribution.end(); ++iter2){
+            mac2 = iter2->first;
+            macCosine.push_back(make_pair(mac2, cos2(macCtgyDistribution[mac1], iter2->second)));
+        }
+      }
+      sort(macCosine.begin(), macCosine.end(), cmp_by_value2);
+
+
+      vector<int> ctgyVec(12,0); //每一轮都重新定义
+      for(int i=0; i<k; i++){
+          mac2 = macCosine[i].first;
+          ctgy2 = macCtgy[mac2];
+          if(ctgy2!=0)
+            ctgyVec[ctgy2-1]++;
+      }
+
+      biggest = max_element(std::begin(ctgyVec), std::end(ctgyVec));
+      ctgy2 = distance(std::begin(ctgyVec), biggest) + 1;
+
+      if(ctgy2 != macCtgy[mac1]){ //更新
+        macCtgy[mac1] = ctgy2;
+        flag = 1;
+      }
+      }
+//      ofs<<mac1<<','<<macCtgy[mac1]<<','<<ctgy2<<','<<similr<<endl;
+    }
+}
+
+
+
+
 
 
 
@@ -204,7 +417,7 @@ void validation(string s){
              }
          }
 
-         if(i!=1){ //第10个split作为测试集
+         if(i!=10){ //第10个split作为测试集
            macCtgy[mac] = catagory;
            //cout<< i<<endl;
          }
@@ -232,19 +445,32 @@ int main(int argc, char* argv[]){
 
    int countIter = 0;
 
+   //首先得到当前的所有mac的邻域类型分布。
+   getUtilizaion();
+   //得到所有mac的每一类的平均邻域分布。
+   getAvgUtilization();
+
+
    while(flag == 1){
       //首先得到当前的所有mac的邻域类型分布。
       getNearstDistDistribution();
       //得到所有mac的每一类的平均邻域分布。
       getAvgNeighbor();
       //然后，比较位置类别中，最相似的类型。并更新macCtgy。
-      getMostSimilar2();
+      //getMostSimilar2();
+      getMostSimilar2_v2();
+//      getMostSimilar2_v3();
+
       //判断终止条件
       cout<<"iterator "<<countIter++ <<" complelted!"<<endl;
    }
 
 
-   string s4 = s+"_neighborSimilar2_1";
+   //string s4 = s+"_neighborSimilar2_10";
+   string s4 = s+"_neighborSimilar2_v2_10";//两两比较
+//   string s4 = s+"_neighborSimilar2_v3_10";//top k
+
+
    ofstream ofs(s4.c_str());
 
    int ctgy = 0;

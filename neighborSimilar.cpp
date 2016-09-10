@@ -1,3 +1,9 @@
+/*
+提供了两种比较邻域分布相似度的方法：
+  1、getMostSimilar1：每个mac两两之间相互比较相似度，选取最相似的mac类型。
+  2、getMostSimilar2：每个mac与每类的平均类别分布比较，只需比较12次，选取最相似的类别。
+*/
+
 #include <fstream>
 #include <string>
 #include <sstream>
