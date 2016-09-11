@@ -273,15 +273,15 @@ int main(int argc, char* argv[]){
 
    string s = argv[1];
 //   string s1 = s+"_Utilization";//safe_wifi_poi_catg12v2_0316_Utilization
-//   string s2 = s+"_intCatagory";//safe_wifi_poi_catg12v2_0316_intCatagory
-/*
+   string s2 = s+"_intCatagory";//safe_wifi_poi_catg12v2_0316_intCatagory
+
    std::stringstream os;
 
    string mac, token, line;
    //float lon=0.0, lat=0.0;
    int catagory = 0;
    int count = 0;
-
+/*
    ifstream ifs1(s1.c_str());
    distri macUtilization;
 
@@ -303,7 +303,7 @@ int main(int argc, char* argv[]){
        macUtilization[mac] = ivector;
     }
     ifs1.close();
-
+*/
     float lon=0, lat=0;
     ifstream ifs2(s2.c_str());
     while(getline(ifs2, line)){
@@ -331,9 +331,9 @@ int main(int argc, char* argv[]){
        macLonlat[mac] = make_pair(lon,lat);
    }
    ifs2.close();
-*/
 
-   validation(s);
+
+//   validation(s);
    getNearstDistDistribution();
    //map<string, pair<string, float> > similarity1 = getMostSimilar(macUtilization);
 
@@ -343,12 +343,13 @@ int main(int argc, char* argv[]){
    ofstream ofs(s5.c_str());
    distri::iterator iter;
 
-   string mac;
+   //string mac;
    int ctgy = 0;
    for(iter=macCtgyDistribution.begin(); iter!=macCtgyDistribution.end(); ++iter){
      mac = iter->first;
      ctgy = macCtgy[mac];
-     ofs<<mac<<','<< macCtgyReal[mac] <<','<< ctgy;//mac,真实类别，测试集类别
+//     ofs<<mac<<','<< macCtgyReal[mac] <<','<< ctgy;//mac,真实类别，测试集类别
+     ofs<<mac <<','<< ctgy;//mac,真实类别，测试集类别
      for(int i=0; i<ctgyNum; i++){
        ofs<<','<<macCtgyDistribution[mac][i];
      }

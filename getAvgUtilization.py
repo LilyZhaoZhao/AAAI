@@ -81,5 +81,5 @@ if __name__=="__main__":
 
     s = cmdArgv[1] #safe_wifi_poi_catg12v2_0316
 
-#    func_Utilization(s+'_Utilization',s+'_intCatagory',s+'_avgUtilization')
-    func_neighbor(s+'_Neighbor',s+'_avgNeighbor') #从mostSimilar.cpp中可以得出
+    func_Utilization(s+'_Utilization',s+'_intCatagory',s+'_avgUtilization')
+#    func_neighbor(s+'_Neighbor',s+'_avgNeighbor') #从mostSimilar.cpp中可以得出

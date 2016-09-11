@@ -93,7 +93,9 @@ bool isNullNeighbor(string mac){
 
 void getUtilizaion(){
 
-  string s1 = "../category12/sampling_wifi_poi_sampingv2_0316_Utilization";
+//  string s1 = "../category12/sampling_wifi_poi_sampingv2_0316_Utilization";
+  string s1 = "mac1617181920v2_0316_Utilization";
+
   ifstream ifs1(s1.c_str());
 
   string mac, token, line;
@@ -123,7 +125,9 @@ void getUtilizaion(){
 void getAvgUtilization(){
 
   //string s1 = "../category12/safe_wifi_poi_catg12v2_0316_avgUtilization";
-  string s1 = "../category12/sampling_wifi_poi_sampingv2_0316_avgUtilization";
+  //string s1 = "../category12/sampling_wifi_poi_sampingv2_0316_avgUtilization";
+  string s1 = "mac1617181920v2_0316_avgUtilization";
+
   ifstream ifs1(s1.c_str());
 
   vector<float> ivector(24,0);
@@ -457,8 +461,8 @@ int main(int argc, char* argv[]){
       //得到所有mac的每一类的平均邻域分布。
       getAvgNeighbor();
       //然后，比较位置类别中，最相似的类型。并更新macCtgy。
-      //getMostSimilar2();
-      getMostSimilar2_v2();
+      getMostSimilar2();
+//      getMostSimilar2_v2();
 //      getMostSimilar2_v3();
 
       //判断终止条件

@@ -35,5 +35,7 @@ if __name__=="__main__":
     fw.close()
 
     print count
-    print float(count)/354
+    #print float(count)/354
     #print float(count)/11969
+    #print float(count)/22252
+    print float(count)/496
