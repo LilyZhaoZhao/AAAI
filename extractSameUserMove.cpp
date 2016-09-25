@@ -74,6 +74,7 @@ int main(int argc, char* argv[]){
     ifstream ifs3(argv[3]);// ../safe_wifi_poi_shenzhen
     ofstream ofs(argv[4]);// moveSZ_0316_intCatagory
 
+//这一部分是：根据mac得到含有经纬度的记录
     set<string> macSet;
 
     string line, mac;
@@ -114,6 +115,7 @@ int main(int argc, char* argv[]){
           }
         }
 
+//这一部分是根据safe_wifi_poi_shenzhen,  向newmoveSZ_0316_intCatagory中添加经纬度
 /*
     int count = 0;
     string token;

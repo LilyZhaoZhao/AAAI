@@ -87,9 +87,9 @@ int main(int argc, char* argv[]){
             }
 		}
         //&& userMac[guid].find(bssid) == userMac[guid].end()&&
-        if(filter.find(bssid)!=filter.end() && userTime[guid].find(t/900) == userTime[guid].end()){
+        if(filter.find(bssid)!=filter.end() && userMac[guid].find(bssid) == userMac[guid].end() && userTime[guid].find(t/900) == userTime[guid].end()){
           //  cout<< "yes"<<endl;
-            userLog[guid].insert(bssid+','+connect_time+','+filter[bssid]);
+            userLog[guid].insert(gotime+','+connect_time+','+filter[bssid]);
             userMac[guid].insert(bssid);
             userTime[guid].insert(t/900);
         }
